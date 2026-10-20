@@ -1,0 +1,661 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>WCatalog</title>
+  <link rel="stylesheet" href="/css/app.css">
+  <link id="tema-css" rel="stylesheet" href="/api/tema.css">
+  <script src="/js/api.js"></script>
+  <script src="/js/router.js"></script>
+  <script src="/js/app.js"></script>
+  <script src="/js/ajustes.js"></script>
+  <script src="/js/coords.js"></script>
+  <script src="/js/fotos.js"></script>
+  <script src="/js/casas.js"></script>
+  <script src="/js/caracteristicas.js"></script>
+  <script src="/vendor/Sortable.min.js"></script>
+  <script defer src="/vendor/alpine.min.js"></script>
+</head>
+<body x-data>
+  <div class="shell">
+    <aside class="sidebar">
+      <div class="brand">WCatalog</div>
+      <nav>
+        <template x-for="s in $store.router.sections" :key="s.id">
+          <a :href="'#/' + s.id" class="nav-link" :class="{ active: $store.router.current === s.id }" x-text="s.title"></a>
+        </template>
+      </nav>
+      <div class="sidebar-foot" :class="{ offline: !$store.session.connected }">
+        <span class="dot"></span>
+        <span x-text="$store.session.connected ? 'Conectado' : 'Sin conexión'"></span>
+      </div>
+    </aside>
+
+    <main class="content">
+      <div x-show="!$store.session.connected && $store.session.everConnected" class="banner">
+        Se perdió la conexión con la aplicación. Si la cerró, ábrala de nuevo desde WCatalog.exe.
+      </div>
+
+      <!-- Inicio -->
+      <section x-show="$store.router.current === 'inicio'" x-data="homePage()" x-init="load()">
+        <h1>Inicio</h1>
+        <p class="muted">Estado de la aplicación.</p>
+        <dl class="info-grid" x-show="info">
+          <dt>Versión</dt>
+          <dd id="info-version" x-text="info && info.version"></dd>
+          <dt>Carpeta de datos</dt>
+          <dd id="info-datadir" x-text="info && info.dataDir"></dd>
+          <dt>Versión del esquema</dt>
+          <dd id="info-schema" x-text="info && info.schemaVersion"></dd>
+        </dl>
+        <p x-show="!info && !failed" class="muted">Cargando…</p>
+        <p x-show="failed" class="muted">No se pudo leer la información de la aplicación.</p>
+      </section>
+
+      <!-- Ajustes -->
+      <section x-show="$store.router.current === 'ajustes' && !$store.router.sub" x-data="ajustesPage()" class="settings">
+        <h1>Ajustes</h1>
+        <p class="muted">Identidad visual y datos de contacto que llevarán tus flyers y catálogos.
+          <a href="#/ajustes/caracteristicas" id="link-caracteristicas">Administrar características de las casas &rarr;</a></p>
+
+        <div x-show="loaded">
+          <!-- Tema -->
+          <div class="card">
+            <h2>Tema</h2>
+            <div class="color-row">
+              <template x-for="c in [['colorPrimario','Color primario'],['colorSecundario','Color secundario'],['colorTerciario','Color terciario']]" :key="c[0]">
+                <div class="field">
+                  <label x-text="c[1]"></label>
+                  <div class="color-input">
+                    <input type="color" :value="form.tema[c[0]]" @input="form.tema[c[0]] = $event.target.value.toUpperCase()">
+                    <input type="text" :id="'in-' + c[0]" x-model="form.tema[c[0]]" maxlength="7" spellcheck="false" :class="{ invalid: err('tema.' + c[0]) }">
+                  </div>
+                  <p class="field-error" x-show="err('tema.' + c[0])" x-text="err('tema.' + c[0])"></p>
+                </div>
+              </template>
+            </div>
+
+            <h3>Vista previa</h3>
+            <div class="preview" id="theme-preview">
+              <div class="preview-head" style="background: var(--color-primario)">
+                <span class="preview-title" style="font-family: var(--fuente-titulos); color: var(--color-terciario)">Casa amplia con jardín</span>
+              </div>
+              <div class="preview-body" style="background: var(--color-terciario)">
+                <p style="font-family: var(--fuente-texto)">Luminosa casa de tres habitaciones, cocina integral y patio. Peña, ñandú, acción.</p>
+                <div class="badges">
+                  <span class="badge" style="background: var(--color-primario); color: var(--color-terciario); font-family: var(--fuente-texto)">Primario</span>
+                  <span class="badge" style="background: var(--color-secundario); color: #fff; font-family: var(--fuente-texto)">Secundario</span>
+                  <span class="badge" style="background: var(--color-terciario); color: var(--color-primario); border: 1px solid var(--color-primario); font-family: var(--fuente-texto)">Terciario</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Tipografía -->
+          <div class="card">
+            <h2>Tipografía</h2>
+            <div class="grid-2">
+              <div class="field">
+                <label for="sel-titulos">Fuente de títulos</label>
+                <select id="sel-titulos" x-model="form.tipografia.fuenteTitulos">
+                  <template x-for="f in families" :key="f.familia"><option :value="f.familia" x-text="f.familia"></option></template>
+                </select>
+                <p class="field-error" x-show="err('tipografia.fuenteTitulos')" x-text="err('tipografia.fuenteTitulos')"></p>
+              </div>
+              <div class="field">
+                <label for="sel-texto">Fuente de texto</label>
+                <select id="sel-texto" x-model="form.tipografia.fuenteTexto">
+                  <template x-for="f in families" :key="f.familia"><option :value="f.familia" x-text="f.familia"></option></template>
+                </select>
+                <p class="field-error" x-show="err('tipografia.fuenteTexto')" x-text="err('tipografia.fuenteTexto')"></p>
+              </div>
+            </div>
+
+            <h3>Biblioteca de fuentes</h3>
+            <ul class="font-list" id="font-list">
+              <template x-for="f in families" :key="f.familia">
+                <li class="font-item">
+                  <div class="font-head">
+                    <strong x-text="f.familia"></strong>
+                    <span class="tag" :class="f.origen" x-text="f.origen === 'incluida' ? 'Incluida' : 'Importada'"></span>
+                  </div>
+                  <div class="font-sample" :style="familyStyle(f.familia, 400)" x-text="sample"></div>
+                  <div class="font-sample" :style="familyStyle(f.familia, 700)" x-show="f.variantes.some(v => v.peso >= 600)" x-text="sample"></div>
+                  <ul class="variants">
+                    <template x-for="v in f.variantes" :key="v.archivo + v.origen">
+                      <li>
+                        <span x-text="v.peso + ' · ' + (v.estilo === 'italic' ? 'cursiva' : 'normal')"></span>
+                        <span class="tag small" :class="v.origen" x-text="v.origen === 'incluida' ? 'Incluida' : 'Importada'"></span>
+                        <template x-if="v.origen === 'importada'">
+                          <button type="button" class="link danger" @click="confirmDelete(v, f.familia)">Eliminar</button>
+                        </template>
+                      </li>
+                    </template>
+                  </ul>
+                </li>
+              </template>
+            </ul>
+
+            <div class="confirm" x-show="pendingDelete">
+              <span>¿Eliminar la fuente <strong x-text="pendingDelete && pendingDelete.label"></strong>? Se borrará su archivo.</span>
+              <button type="button" class="btn danger" id="btn-eliminar-ok" @click="deleteFont()">Eliminar</button>
+              <button type="button" class="btn" @click="pendingDelete = null">Cancelar</button>
+            </div>
+
+            <h3>Importar fuente</h3>
+            <p class="muted">Archivos <code>.ttf</code> u <code>.otf</code> de hasta 10 MB.</p>
+            <div class="import-actions">
+              <input type="file" x-ref="fontFile" id="font-file" accept=".ttf,.otf" @change="analyze($event)" :disabled="imp.busy">
+              <button type="button" class="btn" id="btn-google-fonts" @click="openGoogleFonts()">Buscar fuentes en Google Fonts</button>
+            </div>
+            <p class="field-error" x-show="imp.error" x-text="imp.error"></p>
+
+            <div class="import-step" x-show="imp.step === 2 &amp;&amp; imp.meta">
+              <h4>Revisa los datos detectados</h4>
+              <template x-if="imp.meta">
+                <div>
+                  <p class="muted" x-text="'Archivo: ' + imp.meta.archivoOriginal"></p>
+                  <template x-for="w in imp.meta.avisos" :key="w"><p class="warn" x-text="w"></p></template>
+                  <div class="grid-3">
+                    <div class="field"><label>Familia</label><input type="text" id="imp-familia" x-model="imp.meta.familia" maxlength="100"></div>
+                    <div class="field"><label>Peso</label>
+                      <select id="imp-peso" x-model.number="imp.meta.peso"><option value="100">100</option><option value="200">200</option><option value="300">300</option><option value="400">400</option><option value="500">500</option><option value="600">600</option><option value="700">700</option><option value="800">800</option><option value="900">900</option></select>
+                    </div>
+                    <div class="field"><label>Estilo</label>
+                      <select id="imp-estilo" x-model="imp.meta.estilo"><option value="normal">Normal</option><option value="italic">Cursiva</option></select>
+                    </div>
+                  </div>
+                  <div class="confirm" x-show="imp.askReplace">
+                    <span>Ya existe esa variante. ¿Quieres reemplazarla?</span>
+                    <button type="button" class="btn danger" id="btn-reemplazar" @click="importFont(true)">Reemplazar</button>
+                    <button type="button" class="btn" @click="imp.askReplace = false">No</button>
+                  </div>
+                  <div class="actions" x-show="!imp.askReplace">
+                    <button type="button" class="btn primary" id="btn-importar" @click="importFont(false)" :disabled="imp.busy">Importar</button>
+                    <button type="button" class="btn" @click="resetImport()">Cancelar</button>
+                  </div>
+                </div>
+              </template>
+            </div>
+          </div>
+
+          <!-- Contacto -->
+          <div class="card">
+            <h2>Contacto</h2>
+            <p class="muted">Todo es opcional.</p>
+            <div class="grid-2">
+              <template x-for="c in [['nombre','Nombre del negocio o agente'],['telefono','Teléfono'],['whatsapp','WhatsApp'],['email','Email'],['web','Sitio web'],['instagram','Instagram'],['facebook','Facebook']]" :key="c[0]">
+                <div class="field">
+                  <label x-text="c[1]"></label>
+                  <input type="text" :id="'in-' + c[0]" x-model="form.contacto[c[0]]" :class="{ invalid: err('contacto.' + c[0]) }" maxlength="200">
+                  <p class="field-error" x-show="err('contacto.' + c[0])" x-text="err('contacto.' + c[0])"></p>
+                </div>
+              </template>
+            </div>
+          </div>
+
+          <!-- General -->
+          <div class="card">
+            <h2>General</h2>
+            <div class="field narrow">
+              <label for="in-moneda">Moneda por defecto</label>
+              <input type="text" id="in-moneda" x-model="form.general.moneda" maxlength="3" style="text-transform: uppercase" :class="{ invalid: err('general.moneda') }">
+              <p class="field-error" x-show="err('general.moneda')" x-text="err('general.moneda')"></p>
+            </div>
+          </div>
+
+          <div class="save-bar">
+            <button type="button" class="btn primary" id="btn-guardar" @click="save()" :disabled="saving">Guardar ajustes</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- Casas -->
+      <section x-show="$store.router.current === 'casas'" x-data="casasPage()" x-effect="route($store.router.current, $store.router.sub)" class="casas">
+
+        <!-- Lista -->
+        <div x-show="view === 'list'">
+          <div class="page-head">
+            <div>
+              <h1>Casas</h1>
+              <p class="muted">Las casas que aparecerán en tus flyers y catálogos.</p>
+            </div>
+            <a href="#/casas/nueva" class="btn primary" id="btn-nueva-casa">Nueva casa</a>
+          </div>
+
+          <div class="toolbar">
+            <input type="search" id="q-casas" placeholder="Buscar por título, barrio o municipio" x-model="q" @input="searchChanged()">
+            <select id="f-estado" x-model="estadoFiltro" @change="loadList()">
+              <option value="">Todos los estados</option>
+              <option value="disponible">Disponible</option>
+              <option value="reservada">Reservada</option>
+              <option value="vendida">Vendida</option>
+              <option value="alquilada">Alquilada</option>
+            </select>
+          </div>
+
+          <table class="table" id="tabla-casas" x-show="houses.length">
+            <thead>
+              <tr><th class="thumb-col"></th><th>Título</th><th>Ubicación</th><th class="num">Cuartos</th><th class="num">Baños</th><th class="num">Precio</th><th>Estado</th><th>Modificada</th></tr>
+            </thead>
+            <tbody>
+              <template x-for="h in houses" :key="h.id">
+                <tr class="row-link" @click="window.location.hash = '#/casas/' + h.id">
+                  <td class="thumb-col">
+                    <img class="thumb" x-show="h.portada_min" :src="h.portada_min" alt="" loading="lazy">
+                    <span class="thumb thumb-empty" x-show="!h.portada_min" title="Sin fotos"><span class="icon" style="--icon: url(/vendor/icons/house.svg)"></span></span>
+                  </td>
+                  <td><a :href="'#/casas/' + h.id" x-text="h.titulo" @click.stop></a></td>
+                  <td x-text="place(h)"></td>
+                  <td class="num" x-text="h.cuartos == null ? '—' : h.cuartos"></td>
+                  <td class="num" x-text="h.banos == null ? '—' : h.banos"></td>
+                  <td class="num" x-text="price(h)"></td>
+                  <td><span class="estado" :class="h.estado" x-text="estadoLabel(h.estado)"></span></td>
+                  <td x-text="date(h.actualizado)"></td>
+                </tr>
+              </template>
+            </tbody>
+          </table>
+          <p class="muted" x-show="listLoaded && !houses.length && !q && !estadoFiltro">Todavía no hay casas. Pulsa "Nueva casa" para registrar la primera.</p>
+          <p class="muted" x-show="listLoaded && !houses.length && (q || estadoFiltro)">Ninguna casa coincide con la búsqueda.</p>
+        </div>
+
+        <!-- Formulario -->
+        <div x-show="view === 'form'">
+          <div class="page-head">
+            <div>
+              <a href="#/casas" class="back">&larr; Casas</a>
+              <h1 x-text="id == null ? 'Nueva casa' : 'Editar casa'"></h1>
+            </div>
+          </div>
+
+          <div class="card">
+            <h2>Básico</h2>
+            <div class="field">
+              <label for="f-titulo">Título *</label>
+              <input type="text" id="f-titulo" x-model="f.titulo" maxlength="200" :class="{ invalid: err('titulo') }">
+              <p class="field-error" x-show="err('titulo')" x-text="err('titulo')"></p>
+            </div>
+            <div class="field">
+              <label for="f-descripcion">Descripción</label>
+              <textarea id="f-descripcion" rows="4" x-model="f.descripcion" maxlength="5000"></textarea>
+              <p class="field-error" x-show="err('descripcion')" x-text="err('descripcion')"></p>
+            </div>
+            <div class="grid-2">
+              <div class="field">
+                <label for="f-operacion">Operación</label>
+                <select id="f-operacion" x-model="f.operacion">
+                  <option value="">Sin indicar</option>
+                  <option value="venta">Venta</option>
+                  <option value="alquiler">Alquiler</option>
+                </select>
+              </div>
+              <div class="field">
+                <label for="f-estado-casa">Estado</label>
+                <select id="f-estado-casa" x-model="f.estado">
+                  <option value="disponible">Disponible</option>
+                  <option value="reservada">Reservada</option>
+                  <option value="vendida">Vendida</option>
+                  <option value="alquilada">Alquilada</option>
+                </select>
+                <p class="field-error" x-show="err('estado')" x-text="err('estado')"></p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Fotos -->
+          <div class="card fotos" id="seccion-fotos">
+            <h2>Fotos</h2>
+            <p class="muted" id="fotos-sin-guardar" x-show="id == null">Guarda la casa para añadir fotos.</p>
+
+            <div x-show="id != null">
+              <label class="fotos-drop" :class="{ over: dragOver }" id="fotos-drop"
+                    @dragover.prevent="dragOver = true" @dragleave.prevent="dragOver = false" @drop.prevent="dropFiles($event)">
+                <span>Arrastra las fotos aquí o <u>elígelas desde tu equipo</u></span>
+                <span class="hint">JPEG o PNG, hasta 25 MB cada una. Máximo <span x-text="maxFotos"></span> fotos por casa.</span>
+                <input type="file" id="fotos-input" accept="image/jpeg,image/png,.jpg,.jpeg,.png" multiple @change="pickFiles($event)">
+              </label>
+
+              <ul class="foto-queue" id="fotos-cola" x-show="queue.length">
+                <template x-for="q in queue" :key="q.key">
+                  <li :class="q.status">
+                    <span class="q-name" x-text="q.name"></span>
+                    <template x-if="q.status !== 'error'">
+                      <span class="q-bar"><span :style="'width:' + Math.round(q.progress * 100) + '%'"></span></span>
+                    </template>
+                    <span class="q-state muted" x-show="q.status === 'esperando'">En espera</span>
+                    <span class="q-state muted" x-show="q.status === 'subiendo'">Subiendo…</span>
+                    <template x-if="q.status === 'error'">
+                      <span class="q-error"><span x-text="q.error"></span> <button type="button" class="link" @click="dismissQueued(q.key)">Descartar</button></span>
+                    </template>
+                  </li>
+                </template>
+              </ul>
+
+              <p class="muted" x-show="!photos.length && !queue.length">Esta casa todavía no tiene fotos.</p>
+
+              <div class="foto-grid" id="fotos-grid" x-init="initSortable($el)" x-show="photos.length">
+                <template x-for="(p, i) in photos" :key="p.id">
+                  <figure class="foto-card" :data-id="p.id">
+                    <div class="foto-img">
+                      <img :src="p.url_min" :alt="p.pie || 'Foto ' + (i + 1)" draggable="false">
+                      <span class="portada-tag" x-show="i === 0">Portada</span>
+                    </div>
+                    <input type="text" class="foto-pie" placeholder="Pie de foto (opcional)" :value="p.pie"
+                           @blur="saveCaption(p, $event.target.value)" @keydown.enter.prevent="$event.target.blur()">
+                    <p class="field-error" x-show="captionErrors[p.id]" x-text="captionErrors[p.id]"></p>
+                    <div class="foto-actions">
+                      <button type="button" class="link" x-show="i > 0" @click="makeCover(p)">Hacer portada</button>
+                      <span class="spacer"></span>
+                      <button type="button" class="link danger" @click="photoToDelete = p">Eliminar</button>
+                    </div>
+                  </figure>
+                </template>
+              </div>
+              <div class="confirm" id="fotos-confirmar" x-show="photoToDelete">
+                <span>¿Eliminar esta foto? Se borrará de la casa y de la carpeta de datos. No se puede deshacer.</span>
+                <button type="button" class="btn danger" id="foto-eliminar-ok" @click="deletePhoto()">Eliminar</button>
+                <button type="button" class="btn" @click="photoToDelete = null">Cancelar</button>
+              </div>
+            </div>
+          </div>
+
+
+          <div class="card">
+            <h2>Precio</h2>
+            <p class="muted">Opcional. Sin precio, los documentos mostrarán "Consultar" o lo ocultarán.</p>
+            <div class="grid-3-price">
+              <div class="field">
+                <label for="f-precio">Importe</label>
+                <input type="number" id="f-precio" min="0" step="0.01" x-model="f.precio" :class="{ invalid: err('precio') }">
+                <p class="field-error" x-show="err('precio')" x-text="err('precio')"></p>
+              </div>
+              <div class="field">
+                <label for="f-moneda">Moneda</label>
+                <input type="text" id="f-moneda" maxlength="3" x-model="f.moneda" style="text-transform: uppercase" :class="{ invalid: err('moneda') }">
+                <p class="field-error" x-show="err('moneda')" x-text="err('moneda')"></p>
+              </div>
+              <div class="field">
+                <label for="f-sin-precio">Si no hay precio</label>
+                <select id="f-sin-precio" x-model="f.sin_precio">
+                  <option value="consultar">Mostrar "Consultar"</option>
+                  <option value="ocultar">Ocultar el precio</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <div class="card">
+            <h2>Distribución</h2>
+            <div class="grid-4">
+              <template x-for="c in [['cuartos','Cuartos'],['banos','Baños'],['comedores_independientes','Comedores independientes'],['niveles','Niveles']]" :key="c[0]">
+                <div class="field">
+                  <label :for="'f-' + c[0]" x-text="c[1]"></label>
+                  <input type="number" min="0" step="1" :id="'f-' + c[0]" x-model="f[c[0]]" :class="{ invalid: err(c[0]) }">
+                  <p class="field-error" x-show="err(c[0])" x-text="err(c[0])"></p>
+                </div>
+              </template>
+            </div>
+            <div class="grid-2">
+              <template x-for="c in [['area_construida_m2','Área construida (m²)'],['area_terreno_m2','Área de terreno (m²)']]" :key="c[0]">
+                <div class="field">
+                  <label :for="'f-' + c[0]" x-text="c[1]"></label>
+                  <input type="number" min="0" step="any" :id="'f-' + c[0]" x-model="f[c[0]]" :class="{ invalid: err(c[0]) }">
+                  <p class="field-error" x-show="err(c[0])" x-text="err(c[0])"></p>
+                </div>
+              </template>
+            </div>
+          </div>
+
+          <div class="card">
+            <h2>Ubicación</h2>
+            <div class="grid-2">
+              <template x-for="c in [['direccion','Dirección'],['barrio','Barrio o sector'],['municipio','Municipio'],['provincia','Provincia']]" :key="c[0]">
+                <div class="field">
+                  <label :for="'f-' + c[0]" x-text="c[1]"></label>
+                  <input type="text" :id="'f-' + c[0]" x-model="f[c[0]]" maxlength="200" :class="{ invalid: err(c[0]) }">
+                  <p class="field-error" x-show="err(c[0])" x-text="err(c[0])"></p>
+                </div>
+              </template>
+            </div>
+            <div class="field">
+              <label for="f-coordenadas">Coordenadas</label>
+              <input type="text" id="f-coordenadas" x-model="coordsText" @blur="parseCoords()" @paste="setTimeout(() => parseCoords(), 0)"
+                     placeholder="23.1136, -82.3666 o un enlace de Google Maps" :class="{ invalid: err('coordenadas') || coordsError }" spellcheck="false">
+              <p class="hint">Opcional. Pega las coordenadas que copia Google Maps (clic derecho en el mapa) o el enlace del lugar.</p>
+              <p class="field-error" x-show="err('coordenadas') || coordsError" x-text="err('coordenadas') || coordsError"></p>
+            </div>
+          </div>
+
+          <div class="card" x-show="catalog.length">
+            <h2>Características</h2>
+            <p class="muted">Marca solo lo que la casa tiene; lo que dejes vacío no se mostrará. <a href="#/ajustes/caracteristicas">Administrar características</a></p>
+            <template x-for="g in byCategory()" :key="g.key">
+              <div class="feature-group">
+                <h3 x-text="g.label"></h3>
+                <div class="feature-grid">
+                  <template x-for="c in g.items" :key="c.id">
+                    <div class="feature">
+                      <template x-if="c.tipo === 'bool'">
+                        <label class="check"><input type="checkbox" :id="'car-' + c.clave" x-model="values[c.id]" @change="refreshBadges()"> <span x-text="c.etiqueta"></span></label>
+                      </template>
+                      <template x-if="c.tipo !== 'bool'">
+                        <div class="field">
+                          <label :for="'car-' + c.clave" x-text="c.etiqueta + (c.unidad ? ' (' + c.unidad + ')' : '')"></label>
+                          <template x-if="c.tipo === 'numero'"><input type="number" min="0" step="any" :id="'car-' + c.clave" x-model="values[c.id]" @input="refreshBadges()"></template>
+                          <template x-if="c.tipo === 'texto'"><input type="text" :id="'car-' + c.clave" x-model="values[c.id]" maxlength="500" @input="refreshBadges()"></template>
+                          <template x-if="c.tipo === 'opcion'">
+                            <select :id="'car-' + c.clave" x-model="values[c.id]" @change="refreshBadges()">
+                              <option value="">—</option>
+                              <template x-for="o in c.opciones" :key="o"><option :value="o" x-text="o"></option></template>
+                            </select>
+                          </template>
+                          <template x-if="c.tipo === 'multiopcion'">
+                            <div class="multi">
+                              <template x-for="o in c.opciones" :key="o">
+                                <label class="check small"><input type="checkbox" :checked="(values[c.id] || []).includes(o)" @change="toggleMulti(c.id, o)"> <span x-text="o"></span></label>
+                              </template>
+                            </div>
+                          </template>
+                        </div>
+                      </template>
+                      <p class="field-error" x-show="err('caracteristicas.' + c.id)" x-text="err('caracteristicas.' + c.id)"></p>
+                    </div>
+                  </template>
+                </div>
+              </div>
+            </template>
+
+            <h3>Vista previa de los badges</h3>
+            <div class="badges" id="badges-preview">
+              <template x-for="b in badges" :key="b.caracteristica_id">
+                <span class="badge" :class="'rol-' + b.rol">
+                  <span class="icon" x-show="b.icono" :style="'--icon: url(/vendor/icons/' + b.icono + '.svg)'"></span>
+                  <span x-text="b.texto"></span>
+                </span>
+              </template>
+              <span class="muted" x-show="!badges.length">Aún no hay badges.</span>
+            </div>
+          </div>
+
+          <div class="save-bar">
+            <button type="button" class="btn primary" id="btn-guardar-casa" @click="save()" :disabled="saving">Guardar casa</button>
+            <a href="#/casas" class="btn">Cancelar</a>
+            <span class="spacer"></span>
+            <template x-if="id != null">
+              <button type="button" class="btn danger-outline" id="btn-eliminar-casa" @click="confirmingDelete = true">Eliminar casa</button>
+            </template>
+          </div>
+          <div class="confirm" x-show="confirmingDelete">
+            <span>¿Eliminar <strong x-text="f.titulo"></strong>? Se borrarán también sus características. No se puede deshacer.</span>
+            <button type="button" class="btn danger" id="btn-eliminar-casa-ok" @click="remove()">Eliminar</button>
+            <button type="button" class="btn" id="btn-eliminar-casa-cancel" @click="confirmingDelete = false">Cancelar</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- Administración de características (Ajustes > Características) -->
+      <section x-show="$store.router.current === 'ajustes' && $store.router.sub === 'caracteristicas'" x-data="caracteristicasPage()"
+               x-effect="route($store.router.current, $store.router.sub)" class="caracteristicas">
+        <div class="page-head">
+          <div>
+            <a href="#/ajustes" class="back">&larr; Ajustes</a>
+            <h1>Características de las casas</h1>
+            <p class="muted">Lo que puede tener una casa (servicios, espacios, condición) y cómo se muestra como badge.</p>
+          </div>
+          <button type="button" class="btn primary" id="btn-nueva-car" @click="startNew()">Nueva característica</button>
+        </div>
+
+        <!-- Editor -->
+        <div class="card" id="car-editor" x-show="editing">
+          <h2 x-text="isNew ? 'Nueva característica' : 'Editar característica'"></h2>
+          <p class="field-error" x-show="banner" x-text="banner"></p>
+          <template x-if="editing">
+            <div>
+              <div class="grid-3-car">
+                <div class="field">
+                  <label for="car-etiqueta">Etiqueta</label>
+                  <input type="text" id="car-etiqueta" x-model="editing.etiqueta" maxlength="80" :class="{ invalid: err('etiqueta') }">
+                  <p class="field-error" x-show="err('etiqueta')" x-text="err('etiqueta')"></p>
+                </div>
+                <div class="field">
+                  <label for="car-categoria">Categoría</label>
+                  <select id="car-categoria" x-model="editing.categoria">
+                    <option value="servicios">Servicios</option>
+                    <option value="espacios">Espacios</option>
+                    <option value="condicion">Condición</option>
+                    <option value="otra">Otra</option>
+                  </select>
+                </div>
+                <div class="field">
+                  <label for="car-tipo">Tipo de valor</label>
+                  <select id="car-tipo" x-model="editing.tipo">
+                    <option value="bool">Sí / no</option>
+                    <option value="numero">Número</option>
+                    <option value="texto">Texto</option>
+                    <option value="opcion">Opción única</option>
+                    <option value="multiopcion">Opción múltiple</option>
+                  </select>
+                  <p class="field-error" x-show="err('tipo')" x-text="err('tipo')"></p>
+                </div>
+              </div>
+
+              <div class="field" x-show="editing.tipo === 'opcion' || editing.tipo === 'multiopcion'">
+                <label for="car-opciones">Opciones (una por línea)</label>
+                <textarea id="car-opciones" rows="4" x-model="editing.opcionesText" :class="{ invalid: err('opciones') }"></textarea>
+                <p class="field-error" x-show="err('opciones')" x-text="err('opciones')"></p>
+              </div>
+              <div class="field narrow" x-show="editing.tipo === 'numero'">
+                <label for="car-unidad">Unidad (opcional)</label>
+                <input type="text" id="car-unidad" x-model="editing.unidad" maxlength="20" placeholder="plazas, m²...">
+                <p class="field-error" x-show="err('unidad')" x-text="err('unidad')"></p>
+              </div>
+
+              <div class="field">
+                <label>Icono</label>
+                <div class="icon-grid" id="icon-grid">
+                  <button type="button" class="icon-opt" :class="{ selected: editing.icono === '' }" @click="editing.icono = ''" title="Sin icono">∅</button>
+                  <template x-for="n in icons" :key="n">
+                    <button type="button" class="icon-opt" :class="{ selected: editing.icono === n }" :title="n" :data-icon="n" @click="editing.icono = n">
+                      <span class="icon" :style="'--icon: url(/vendor/icons/' + n + '.svg)'"></span>
+                    </button>
+                  </template>
+                </div>
+                <p class="field-error" x-show="err('icono')" x-text="err('icono')"></p>
+              </div>
+
+              <h3>Badge</h3>
+              <div class="grid-3-car">
+                <div class="field">
+                  <label class="check"><input type="checkbox" id="car-badge-visible" x-model="editing.badge.visible"> <span>Mostrar como badge</span></label>
+                </div>
+                <div class="field">
+                  <label for="car-badge-texto">Texto (usa {valor})</label>
+                  <input type="text" id="car-badge-texto" x-model="editing.badge.texto" maxlength="100" :placeholder="defaultBadgeText()" :class="{ invalid: err('badge.texto') }">
+                  <p class="field-error" x-show="err('badge.texto')" x-text="err('badge.texto')"></p>
+                </div>
+                <div class="field">
+                  <label for="car-badge-rol">Rol de color</label>
+                  <select id="car-badge-rol" x-model="editing.badge.rol">
+                    <option value="primario">Primario</option>
+                    <option value="secundario">Secundario</option>
+                    <option value="terciario">Terciario</option>
+                  </select>
+                </div>
+              </div>
+              <div class="badges" id="car-preview">
+                <span class="badge" :class="'rol-' + editing.badge.rol" x-show="editing.badge.visible">
+                  <span class="icon" x-show="editing.icono" :style="'--icon: url(/vendor/icons/' + editing.icono + '.svg)'"></span>
+                  <span x-text="previewText()"></span>
+                </span>
+                <span class="muted" x-show="!editing.badge.visible">Esta característica no se mostrará como badge.</span>
+              </div>
+
+              <div class="actions">
+                <button type="button" class="btn primary" id="btn-guardar-car" @click="save()" :disabled="saving">Guardar</button>
+                <button type="button" class="btn" @click="cancel()">Cancelar</button>
+              </div>
+            </div>
+          </template>
+        </div>
+
+        <div class="confirm" id="car-confirm" x-show="pendingDelete">
+          <span x-show="pendingDelete">
+            ¿Eliminar <strong x-text="pendingDelete && pendingDelete.item.etiqueta"></strong>?
+            <template x-if="pendingDelete && pendingDelete.count > 0"><span class="warn-inline">Afectará a <b x-text="pendingDelete.count"></b> <span x-text="pendingDelete.count === 1 ? 'casa' : 'casas'"></span>: se borrarán sus valores.</span></template>
+            <template x-if="pendingDelete && pendingDelete.count === 0"><span>Ninguna casa la usa.</span></template>
+          </span>
+          <button type="button" class="btn danger" id="btn-eliminar-car-ok" @click="confirmDelete()">Eliminar</button>
+          <button type="button" class="btn" @click="pendingDelete = null">Cancelar</button>
+        </div>
+
+        <!-- Lista ordenable -->
+        <div class="card">
+          <table class="table" id="tabla-car">
+            <thead><tr><th></th><th>Característica</th><th>Categoría</th><th>Tipo</th><th>Badge</th><th>Estado</th><th></th></tr></thead>
+            <tbody>
+              <template x-for="(c, i) in items" :key="c.id">
+                <tr :class="{ inactive: !c.activa }" :data-clave="c.clave">
+                  <td class="order-btns">
+                    <button type="button" class="link" :disabled="i === 0" @click="move(i, -1)" title="Subir">↑</button>
+                    <button type="button" class="link" :disabled="i === items.length - 1" @click="move(i, 1)" title="Bajar">↓</button>
+                  </td>
+                  <td>
+                    <span class="icon" x-show="c.icono" :style="'--icon: url(/vendor/icons/' + c.icono + '.svg)'"></span>
+                    <strong x-text="c.etiqueta"></strong>
+                    <span class="tag small" x-show="c.predefinida">Predefinida</span>
+                  </td>
+                  <td x-text="categoryLabel(c.categoria)"></td>
+                  <td x-text="typeLabel(c.tipo)"></td>
+                  <td><span class="badge small" :class="'rol-' + c.badge.rol" x-show="c.badge.visible" x-text="c.badge.texto || (c.tipo === 'bool' ? c.etiqueta : c.etiqueta + ': …')"></span><span class="muted" x-show="!c.badge.visible">Oculto</span></td>
+                  <td x-text="c.activa ? 'Activa' : 'Inactiva'"></td>
+                  <td class="row-actions">
+                    <button type="button" class="link" :id="'edit-' + c.clave" @click="startEdit(c)">Editar</button>
+                    <button type="button" class="link" @click="toggleActive(c)" x-text="c.activa ? 'Desactivar' : 'Activar'"></button>
+                    <template x-if="!c.predefinida"><button type="button" class="link danger" :id="'del-' + c.clave" @click="askDelete(c)">Eliminar</button></template>
+                  </td>
+                </tr>
+              </template>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- Secciones que llegan en los siguientes changes -->
+      <template x-for="s in $store.router.sections.filter(s => s.id !== 'inicio' && s.id !== 'ajustes' && s.id !== 'casas')" :key="s.id">
+        <section x-show="$store.router.current === s.id">
+          <h1 x-text="s.title"></h1>
+          <p class="muted">Esta sección todavía no está disponible.</p>
+        </section>
+      </template>
+    </main>
+  </div>
+
+  <div class="toasts" aria-live="polite">
+    <template x-for="t in $store.toasts.items" :key="t.id">
+      <div class="toast" :class="t.kind" x-text="t.message" @click="$store.toasts.dismiss(t.id)"></div>
+    </template>
+  </div>
+</body>
+</html>

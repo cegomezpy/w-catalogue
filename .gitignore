@@ -1,0 +1,23 @@
+build/
+dist/
+data/
+
+# Bases de datos, logs y fotos de usuario: nunca al repo
+*.db
+*.db-wal
+*.db-shm
+*.log
+fotos/
+
+# Local de cada máquina / herramientas
+.claude/settings.local.json
+.claude/projects/
+.vscode/
+.idea/
+*.user
+HANDOFF.md
+CMakeUserPresets.json
+.env
+.env.*
+*.pem
+*.key

@@ -1,0 +1,68 @@
+{
+  "fuentes": [
+    {
+      "familia": "Inter",
+      "archivo": "Inter-Regular.ttf",
+      "peso": 400,
+      "estilo": "normal",
+      "generica": "sans-serif",
+      "licencia": "licencias/Inter-OFL.txt"
+    },
+    {
+      "familia": "Inter",
+      "archivo": "Inter-Bold.ttf",
+      "peso": 700,
+      "estilo": "normal",
+      "generica": "sans-serif",
+      "licencia": "licencias/Inter-OFL.txt"
+    },
+    {
+      "familia": "Montserrat",
+      "archivo": "Montserrat-Regular.ttf",
+      "peso": 400,
+      "estilo": "normal",
+      "generica": "sans-serif",
+      "licencia": "licencias/Montserrat-OFL.txt"
+    },
+    {
+      "familia": "Montserrat",
+      "archivo": "Montserrat-Bold.ttf",
+      "peso": 700,
+      "estilo": "normal",
+      "generica": "sans-serif",
+      "licencia": "licencias/Montserrat-OFL.txt"
+    },
+    {
+      "familia": "Poppins",
+      "archivo": "Poppins-Regular.ttf",
+      "peso": 400,
+      "estilo": "normal",
+      "generica": "sans-serif",
+      "licencia": "licencias/Poppins-OFL.txt"
+    },
+    {
+      "familia": "Poppins",
+      "archivo": "Poppins-Bold.ttf",
+      "peso": 700,
+      "estilo": "normal",
+      "generica": "sans-serif",
+      "licencia": "licencias/Poppins-OFL.txt"
+    },
+    {
+      "familia": "Playfair Display",
+      "archivo": "PlayfairDisplay-Regular.ttf",
+      "peso": 400,
+      "estilo": "normal",
+      "generica": "serif",
+      "licencia": "licencias/PlayfairDisplay-OFL.txt"
+    },
+    {
+      "familia": "Playfair Display",
+      "archivo": "PlayfairDisplay-Bold.ttf",
+      "peso": 700,
+      "estilo": "normal",
+      "generica": "serif",
+      "licencia": "licencias/PlayfairDisplay-OFL.txt"
+    }
+  ]
+}
