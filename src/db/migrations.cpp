@@ -51,6 +51,27 @@ const std::vector<Migration>& app_migrations() {
          "  creado TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now'))"
          ");"
          "CREATE INDEX idx_foto_casa_orden ON foto (casa_id, orden);"},
+        {5,
+         "CREATE TABLE documento ("
+         "  id INTEGER PRIMARY KEY AUTOINCREMENT,"
+         "  tipo TEXT NOT NULL CHECK (tipo IN ('flyer', 'catalogo')),"
+         "  titulo TEXT,"
+         "  descripcion TEXT,"
+         "  portada_foto_id INTEGER REFERENCES foto (id) ON DELETE SET NULL,"
+         "  portada_propia INTEGER NOT NULL DEFAULT 0 CHECK (portada_propia IN (0, 1)),"
+         "  formatos_preferidos TEXT NOT NULL DEFAULT '[]',"
+         "  creado TEXT NOT NULL,"
+         "  actualizado TEXT NOT NULL"
+         ");"
+         "CREATE INDEX idx_documento_actualizado ON documento (actualizado);"
+         "CREATE TABLE documento_casa ("
+         "  documento_id INTEGER NOT NULL REFERENCES documento (id) ON DELETE CASCADE,"
+         "  casa_id INTEGER NOT NULL REFERENCES casa (id) ON DELETE CASCADE,"
+         "  orden INTEGER NOT NULL,"
+         "  descripcion_corta TEXT,"
+         "  PRIMARY KEY (documento_id, casa_id)"
+         ");"
+         "CREATE INDEX idx_documento_casa_casa ON documento_casa (casa_id);"},
     };
     return migrations;
 }

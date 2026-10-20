@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{ documento.titulo }}</title>
+<style>
+{{ tema_css }}
+{{ base_css }}
+@page { size: {{ formato.ancho }}px {{ formato.alto }}px; margin: 0 }
+</style>
+</head>
+<body class="formato-{{ formato.id }}{% if modo == "export" %} con-barra{% endif %}">
+{% if modo == "export" %}
+{% include "_barra_pdf.html" %}
+{% endif %}

@@ -13,6 +13,7 @@
   <script src="/js/coords.js"></script>
   <script src="/js/fotos.js"></script>
   <script src="/js/casas.js"></script>
+  <script src="/js/documentos.js"></script>
   <script src="/js/caracteristicas.js"></script>
   <script src="/vendor/Sortable.min.js"></script>
   <script defer src="/vendor/alpine.min.js"></script>
@@ -484,11 +485,23 @@
             <a href="#/casas" class="btn">Cancelar</a>
             <span class="spacer"></span>
             <template x-if="id != null">
-              <button type="button" class="btn danger-outline" id="btn-eliminar-casa" @click="confirmingDelete = true">Eliminar casa</button>
+              <div class="actions">
+              <button type="button" class="btn" id="btn-crear-flyer" @click="createFlyer()">Crear flyer</button>
+              <button type="button" class="btn danger-outline" id="btn-eliminar-casa" @click="askDelete()">Eliminar casa</button>
+              </div>
             </template>
           </div>
           <div class="confirm" x-show="confirmingDelete">
             <span>¿Eliminar <strong x-text="f.titulo"></strong>? Se borrarán también sus características. No se puede deshacer.</span>
+            <div class="confirm-docs" id="aviso-documentos" x-show="docsAffected.length">
+              Esta casa se usa en estos documentos:
+              <ul>
+                <template x-for="d in docsAffected" :key="d.id">
+                  <li><strong x-text="d.titulo"></strong> (<span x-text="d.tipo === 'flyer' ? 'flyer' : 'catálogo'"></span>):
+                    <span x-text="d.efecto === 'se_elimina' ? 'se eliminará' : 'se quitará la casa del catálogo'"></span></li>
+                </template>
+              </ul>
+            </div>
             <button type="button" class="btn danger" id="btn-eliminar-casa-ok" @click="remove()">Eliminar</button>
             <button type="button" class="btn" id="btn-eliminar-casa-cancel" @click="confirmingDelete = false">Cancelar</button>
           </div>
@@ -642,8 +655,245 @@
         </div>
       </section>
 
+      <!-- Documentos -->
+      <section x-show="$store.router.current === 'documentos'" x-data="documentosPage()" x-effect="route($store.router.current, $store.router.sub)"
+               @resize.window.debounce.150ms="fitPreview()" class="documentos">
+
+        <!-- Lista -->
+        <div x-show="view === 'list'">
+          <div class="page-head">
+            <div>
+              <h1>Documentos</h1>
+              <p class="muted">Flyers de una casa y catálogos de varias, listos para exportar.</p>
+            </div>
+            <div class="head-actions">
+              <button type="button" class="btn" id="btn-nuevo-flyer" @click="startCreate('flyer')">Nuevo flyer</button>
+              <button type="button" class="btn primary" id="btn-nuevo-catalogo" @click="startCreate('catalogo')">Nuevo catálogo</button>
+            </div>
+          </div>
+
+          <div class="card" id="crear-flyer" x-show="creating === 'flyer'">
+            <h2>Nuevo flyer</h2>
+            <p class="muted" x-show="!houses.length">Primero registra una casa en la sección Casas.</p>
+            <div x-show="houses.length">
+              <div class="field">
+                <label for="nuevo-flyer-casa">Casa del flyer</label>
+                <select id="nuevo-flyer-casa" x-model="newFlyerHouse">
+                  <template x-for="h in houses" :key="h.id"><option :value="String(h.id)" x-text="h.titulo"></option></template>
+                </select>
+              </div>
+              <div class="actions">
+                <button type="button" class="btn primary" id="btn-crear-flyer-ok" @click="createFlyer()" :disabled="busy || !newFlyerHouse">Crear flyer</button>
+                <button type="button" class="btn" @click="creating = null">Cancelar</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="card" id="crear-catalogo" x-show="creating === 'catalogo'">
+            <h2>Nuevo catálogo</h2>
+            <div class="field">
+              <label for="nuevo-cat-titulo">Título *</label>
+              <input type="text" id="nuevo-cat-titulo" x-model="newCatTitle" maxlength="200" :class="{ invalid: err('titulo') }">
+              <p class="field-error" x-show="err('titulo')" x-text="err('titulo')"></p>
+            </div>
+            <div class="field">
+              <label>Casas incluidas *</label>
+              <p class="muted" x-show="!houses.length">Primero registra una casa en la sección Casas.</p>
+              <div class="pick-list">
+                <template x-for="h in houses" :key="h.id">
+                  <label class="check"><input type="checkbox" x-model="newCatHouses[h.id]"> <span x-text="h.titulo"></span></label>
+                </template>
+              </div>
+              <p class="field-error" x-show="err('casas')" x-text="err('casas')"></p>
+            </div>
+            <div class="actions">
+              <button type="button" class="btn primary" id="btn-crear-catalogo-ok" @click="createCatalog()" :disabled="busy">Crear catálogo</button>
+              <button type="button" class="btn" @click="creating = null">Cancelar</button>
+            </div>
+          </div>
+
+          <table class="table" id="tabla-documentos" x-show="docs.length">
+            <thead><tr><th>Título</th><th>Tipo</th><th class="num">Casas</th><th>Modificado</th></tr></thead>
+            <tbody>
+              <template x-for="d in docs" :key="d.id">
+                <tr class="row-link" @click="window.location.hash = '#/documentos/' + d.id">
+                  <td><a :href="'#/documentos/' + d.id" x-text="d.titulo || '(sin título)'" @click.stop></a></td>
+                  <td><span class="tag" :class="d.tipo" x-text="tipoLabel(d.tipo)"></span></td>
+                  <td class="num" x-text="d.casas"></td>
+                  <td x-text="date(d.actualizado)"></td>
+                </tr>
+              </template>
+            </tbody>
+          </table>
+          <p class="muted" x-show="listLoaded && !docs.length">Todavía no hay documentos. Crea un flyer a partir de una casa o un catálogo con varias.</p>
+        </div>
+
+        <!-- Editor -->
+        <div x-show="view === 'editor'">
+          <div class="page-head">
+            <div>
+              <a href="#/documentos" class="back">&larr; Documentos</a>
+              <h1 x-text="doc ? (doc.titulo_efectivo || '(sin título)') : ''"></h1>
+              <p class="muted" x-show="doc" x-text="doc ? tipoLabel(doc.tipo) + ' · ' + doc.casas.length + (doc.casas.length === 1 ? ' casa' : ' casas') : ''"></p>
+            </div>
+          </div>
+
+          <div class="doc-layout" x-show="doc">
+            <div class="doc-form">
+              <div class="card">
+                <h2>Contenido</h2>
+                <div class="field">
+                  <label for="doc-titulo">Título</label>
+                  <input type="text" id="doc-titulo" x-model="form.titulo" maxlength="200" @input="markDirty()"
+                         :placeholder="isFlyer() ? inherit.titulo : ''" :class="{ invalid: err('titulo') }">
+                  <p class="hint" x-show="isFlyer()">Si lo dejas vacío, se usa el título de la casa.</p>
+                  <p class="field-error" x-show="err('titulo')" x-text="err('titulo')"></p>
+                </div>
+                <div class="field">
+                  <label for="doc-descripcion">Descripción</label>
+                  <textarea id="doc-descripcion" rows="4" x-model="form.descripcion" maxlength="5000" @input="markDirty()"
+                            :placeholder="isFlyer() ? inherit.descripcion : ''"></textarea>
+                  <p class="hint" x-show="isFlyer()">Si la dejas vacía, se usa la descripción de la casa.</p>
+                </div>
+              </div>
+
+              <!-- Casas del catálogo -->
+              <div class="card" id="casas-catalogo" x-show="isCatalog()">
+                <h2>Casas</h2>
+                <p class="field-error" x-show="err('casas')" x-text="err('casas')"></p>
+                <ol class="casas-doc">
+                  <template x-for="(c, i) in form.casas" :key="c.casa_id">
+                    <li class="casa-doc">
+                      <div class="casa-doc-head">
+                        <strong x-text="c.titulo"></strong>
+                        <span class="spacer"></span>
+                        <button type="button" class="link" :disabled="i === 0" @click="moveHouse(i, -1)" title="Subir">&uarr;</button>
+                        <button type="button" class="link" :disabled="i === form.casas.length - 1" @click="moveHouse(i, 1)" title="Bajar">&darr;</button>
+                        <button type="button" class="link danger" @click="removeHouse(i)">Quitar</button>
+                      </div>
+                      <label class="hint">Descripción corta</label>
+                      <textarea rows="2" x-model="c.descripcion_corta" maxlength="300" @input="markDirty()"
+                                :placeholder="c.automatica || 'Se usará la descripción de la casa, recortada a 180 caracteres'"></textarea>
+                    </li>
+                  </template>
+                </ol>
+                <div class="actions" x-show="availableHouses().length">
+                  <select x-model="addHouseId" id="doc-agregar-casa">
+                    <option value="">Añadir una casa…</option>
+                    <template x-for="h in availableHouses()" :key="h.id"><option :value="String(h.id)" x-text="h.titulo"></option></template>
+                  </select>
+                  <button type="button" class="btn" @click="addHouse()" :disabled="!addHouseId">Añadir</button>
+                </div>
+              </div>
+
+              <!-- Portada del catálogo -->
+              <div class="card" id="portada-catalogo" x-show="isCatalog()">
+                <h2>Portada</h2>
+                <p class="muted">Opcional. Sube una imagen o elige una foto de las casas incluidas.</p>
+                <div class="actions">
+                  <label class="btn" for="doc-portada-archivo">Subir imagen</label>
+                  <input type="file" id="doc-portada-archivo" accept="image/jpeg,image/png" class="visually-hidden" @change="uploadCover($event)">
+                  <button type="button" class="btn" id="btn-quitar-portada" x-show="doc && doc.portada" @click="chooseCover(null)">Quitar portada</button>
+                </div>
+                <div class="portada-actual" x-show="doc && doc.portada">
+                  <img :src="doc && doc.portada ? doc.portada.url + '?v=' + previewKey : ''" alt="Portada actual">
+                  <span class="muted" x-text="doc && doc.portada ? (doc.portada.origen === 'casa' ? 'Foto de una casa' : 'Imagen subida') : ''"></span>
+                </div>
+                <template x-for="g in housePhotos" :key="g.casa_id">
+                  <div class="portada-grupo">
+                    <h3 x-text="g.titulo"></h3>
+                    <div class="portada-fotos">
+                      <template x-for="p in g.fotos" :key="p.id">
+                        <button type="button" class="portada-opt" :class="{ selected: coverPhotoId() === p.id }" @click="chooseCover(p.id)" title="Usar como portada">
+                          <img :src="p.url_min" alt="">
+                        </button>
+                      </template>
+                    </div>
+                  </div>
+                </template>
+              </div>
+
+              <div class="save-bar">
+                <button type="button" class="btn primary" id="btn-guardar-doc" @click="save()" :disabled="saving">Guardar</button>
+                <span class="warn" x-show="dirty">Cambios sin guardar</span>
+                <span class="spacer"></span>
+                <button type="button" class="btn danger-outline" id="btn-eliminar-doc" @click="confirmingDelete = true">Eliminar</button>
+              </div>
+              <div class="confirm" x-show="confirmingDelete">
+                <span>¿Eliminar este documento? Las casas no se tocan. No se puede deshacer.</span>
+                <button type="button" class="btn danger" id="btn-eliminar-doc-ok" @click="remove()">Eliminar</button>
+                <button type="button" class="btn" @click="confirmingDelete = false">Cancelar</button>
+              </div>
+
+              <!-- Exportar -->
+              <div class="card" id="panel-exportar">
+                <h2>Exportar</h2>
+                <p class="muted">Genera un HTML por formato y, además, un PDF. Si el PDF falla, el HTML queda listo para guardarlo como PDF a mano.</p>
+                <div class="export-formats">
+                  <template x-for="f in formats" :key="f.id">
+                    <label class="check"><input type="checkbox" x-model="exportFormats[f.id]" :disabled="exporting">
+                      <span x-text="f.nombre + ' (' + f.ancho + '×' + f.alto + ')'"></span></label>
+                  </template>
+                </div>
+                <div class="actions">
+                  <button type="button" class="btn primary" id="btn-exportar" @click="exportDocument()" :disabled="exporting">Exportar</button>
+                  <span class="progress" id="exportando" x-show="exporting"><span class="spinner"></span> Exportando… puede tardar unos segundos por formato</span>
+                </div>
+
+                <div class="export-result" id="resultado-exportacion" x-show="exportResult">
+                  <div class="actions">
+                    <strong>Exportación lista</strong>
+                    <button type="button" class="btn" id="btn-abrir-carpeta" @click="openPath(exportResult.carpeta)">Abrir carpeta</button>
+                  </div>
+                  <ul class="result-list">
+                    <template x-for="f in (exportResult ? exportResult.formatos : [])" :key="f.id">
+                      <li>
+                        <div class="result-name" x-text="f.nombre"></div>
+                        <div class="result-line">
+                          <span class="ok-mark">HTML generado</span>
+                          <button type="button" class="link" @click="openPath(f.html)">Abrir HTML</button>
+                        </div>
+                        <div class="result-line" x-show="f.pdf_estado === 'generado'">
+                          <span class="ok-mark">PDF generado</span>
+                          <button type="button" class="link" @click="openPath(f.pdf)">Abrir PDF</button>
+                        </div>
+                        <div class="result-line fail" x-show="f.pdf_estado !== 'generado'">
+                          <span>PDF no generado: <span x-text="pdfMotivo(f)"></span></span>
+                        </div>
+                      </li>
+                    </template>
+                  </ul>
+                  <p class="warn" id="aviso-pdf" x-show="hasPdfFailure()">
+                    Abre el HTML en Edge o Chrome, pulsa «Guardar como PDF» y elige <strong>Guardar como PDF</strong> como impresora.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <!-- Vista previa -->
+            <div class="doc-preview">
+              <div class="card">
+                <div class="preview-bar">
+                  <h2>Vista previa</h2>
+                  <select id="doc-formato-previa" :value="previewFormat" @change="setPreviewFormat($event.target.value)">
+                    <template x-for="f in formats" :key="f.id"><option :value="f.id" x-text="f.nombre" :selected="f.id === previewFormat"></option></template>
+                  </select>
+                  <button type="button" class="link" @click="refreshPreview()">Actualizar</button>
+                </div>
+                <p class="hint" x-show="dirty">La vista previa muestra lo último guardado.</p>
+                <div class="preview-box" x-ref="previewBox">
+                  <div class="preview-frame-wrap" :style="previewBoxStyle()">
+                    <iframe id="doc-preview" title="Vista previa del documento" :src="previewUrl()" :style="previewFrameStyle()"></iframe>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
       <!-- Secciones que llegan en los siguientes changes -->
-      <template x-for="s in $store.router.sections.filter(s => s.id !== 'inicio' && s.id !== 'ajustes' && s.id !== 'casas')" :key="s.id">
+      <template x-for="s in $store.router.sections.filter(s => s.id !== 'inicio' && s.id !== 'ajustes' && s.id !== 'casas' && s.id !== 'documentos')" :key="s.id">
         <section x-show="$store.router.current === s.id">
           <h1 x-text="s.title"></h1>
           <p class="muted">Esta sección todavía no está disponible.</p>

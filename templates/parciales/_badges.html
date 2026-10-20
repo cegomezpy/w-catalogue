@@ -1,0 +1,10 @@
+{% if casa.badges %}
+<div class="badges">
+{% for b in casa.badges %}
+  <span class="badge {{ b.rol }}">{{ b.texto }}</span>
+{% endfor %}
+{% if casa.badges_restantes %}
+  <span class="badge mas">+{{ casa.badges_restantes }}</span>
+{% endif %}
+</div>
+{% endif %}

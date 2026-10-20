@@ -294,3 +294,50 @@ TEST_CASE("migracion 3: las restricciones CHECK y las cascadas funcionan") {
     st.step();
     CHECK(st.column_int(0) == 0);
 }
+
+TEST_CASE("migracion 5: documentos se crea sobre una base con casas y fotos y respeta las cascadas") {
+    TempDir tmp("wcatalog-test-mig-v5");
+    Database db(tmp.path / "c.db");
+    std::vector<Migration> upto4(app_migrations().begin(), app_migrations().begin() + 4);
+    migrate(db, upto4, tmp.path / "backups");
+    REQUIRE(db.user_version() == 4);
+    const std::string ts = "'2026-01-01T00:00:00Z'";
+    db.exec("INSERT INTO casa (titulo, creado, actualizado) VALUES ('A', " + ts + "," + ts + ")");
+    db.exec("INSERT INTO casa (titulo, creado, actualizado) VALUES ('B', " + ts + "," + ts + ")");
+    db.exec("INSERT INTO foto (casa_id, orden, formato_original, ancho, alto, bytes_original) VALUES (1, 1, 'jpg', 10, 10, 5)");
+
+    migrate(db, app_migrations(), tmp.path / "backups");
+    CHECK(db.user_version() >= 5);
+    auto names = table_names(db);
+    CHECK(names.count("documento") == 1);
+    CHECK(names.count("documento_casa") == 1);
+    {
+        Statement st = db.prepare("SELECT COUNT(*) FROM foto");
+        st.step();
+        CHECK(st.column_int(0) == 1);  // la foto existente se conserva
+    }
+
+    db.exec("INSERT INTO documento (tipo, portada_foto_id, creado, actualizado) VALUES ('catalogo', 1, " + ts + "," + ts + ")");
+    db.exec("INSERT INTO documento_casa (documento_id, casa_id, orden) VALUES (1, 1, 1)");
+    db.exec("INSERT INTO documento_casa (documento_id, casa_id, orden) VALUES (1, 2, 2)");
+    CHECK_THROWS_AS(db.exec("INSERT INTO documento (tipo, creado, actualizado) VALUES ('otro', " + ts + "," + ts + ")"), DbError);
+    CHECK_THROWS_AS(db.exec("INSERT INTO documento_casa (documento_id, casa_id, orden) VALUES (1, 99, 3)"), DbError);
+
+    // borrar la foto de portada deja el documento sin portada (SET NULL)
+    db.exec("DELETE FROM foto WHERE id = 1");
+    {
+        Statement st = db.prepare("SELECT portada_foto_id FROM documento WHERE id = 1");
+        REQUIRE(st.step());
+        CHECK(st.is_null(0));
+    }
+    // borrar una casa la quita del documento (CASCADE)
+    db.exec("DELETE FROM casa WHERE id = 2");
+    Statement st = db.prepare("SELECT COUNT(*) FROM documento_casa WHERE documento_id = 1");
+    st.step();
+    CHECK(st.column_int(0) == 1);
+    // borrar el documento borra sus filas
+    db.exec("DELETE FROM documento WHERE id = 1");
+    Statement st2 = db.prepare("SELECT COUNT(*) FROM documento_casa");
+    st2.step();
+    CHECK(st2.column_int(0) == 0);
+}

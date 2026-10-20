@@ -11,6 +11,7 @@ Todas están vendorizadas con versión fija; no se descarga nada al compilar.
 | stb_image | 2.30 | Dominio público / MIT (en el encabezado del archivo) | `stb/stb_image.h` | Decodificación de JPEG y PNG |
 | stb_image_resize2 | 2.18 | Dominio público / MIT (en el encabezado del archivo) | `stb/stb_image_resize2.h` | Redimensionado de fotos (ver nota) |
 | stb_image_write | 1.16 | Dominio público / MIT (en el encabezado del archivo) | `stb/stb_image_write.h` | Codificación de JPEG |
+| Inja | 3.5.0 | MIT (`inja/LICENSE`) | `inja/inja.hpp` | Plantillas de los documentos (single_include) |
 | doctest | 2.5.3 | MIT (`doctest/LICENSE`) | `doctest/doctest.h` | Tests (solo desarrollo) |
 | Alpine.js | 3.15.0 | MIT (`web/vendor/alpine.LICENSE`) | `web/vendor/alpine.min.js` | Interfaz web |
 | SortableJS | 1.15.6 | MIT (`web/vendor/sortable.LICENSE`) | `web/vendor/Sortable.min.js` | Reordenar fotos arrastrando |

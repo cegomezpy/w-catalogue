@@ -1,0 +1,24 @@
+{% include "parciales/_inicio.html" %}
+<section class="pagina portada" style="width: {{ formato.ancho }}px; height: {{ formato.alto }}px; --lineas: {{ formato.lineas_descripcion }}">
+  <div class="foto">
+{% if portada %}
+    <img src="{{ portada.src }}" alt="">
+{% else %}
+    <div class="foto-neutra"></div>
+{% endif %}
+  </div>
+  <div class="contenido">
+    <h1 class="titulo">{{ documento.titulo }}</h1>
+{% if documento.descripcion %}
+    <p class="descripcion">{{ documento.descripcion }}</p>
+{% endif %}
+{% if casas %}
+    <div class="cantidad">{{ documento.casas_texto }}</div>
+{% endif %}
+{% include "parciales/_contacto.html" %}
+  </div>
+</section>
+{% for casa in casas %}
+{% include "parciales/_casa.html" %}
+{% endfor %}
+{% include "parciales/_fin.html" %}

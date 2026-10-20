@@ -9,8 +9,16 @@
 
 #include "app_context.hpp"
 #include "db/migrations.hpp"
+#include "documents/document_context.hpp"
+#include "documents/document_exporter.hpp"
+#include "documents/document_renderer.hpp"
+#include "documents/document_service.hpp"
+#include "documents/formats.hpp"
+#include "documents/pdf_generator.hpp"
+#include "documents/template_engine.hpp"
 #include "fonts/font_library.hpp"
 #include "http/routes_core.hpp"
+#include "http/routes_documents.hpp"
 #include "houses/feature_service.hpp"
 #include "houses/house_service.hpp"
 #include "photos/photo_service.hpp"
@@ -30,6 +38,7 @@
 #include "runtime/lifecycle.hpp"
 #include "runtime/log.hpp"
 #include "runtime/paths.hpp"
+#include "runtime/shell_open.hpp"
 
 using namespace wcatalog;
 using namespace std::chrono_literals;
@@ -104,6 +113,22 @@ int run() {
     register_feature_routes(server.raw(), features);
     register_house_routes(server.raw(), houses);
     register_photo_routes(server.raw(), photos);
+
+    // Documentos: formatos y plantillas se leen de templates/ (editables sin recompilar)
+    const std::filesystem::path templates_dir = resolve_templates_dir(paths.exe_dir);
+    const FormatCatalog formats = FormatCatalog::load(templates_dir / "formatos.json");
+    DocumentService documents(*db, formats, DocumentPaths{paths.documents_dir, paths.tmp_dir});
+    documents.cleanup_tmp();
+    TemplateEngine template_engine(templates_dir);
+    DocumentRenderer renderer(template_engine);
+    DocumentContextBuilder context_builder(documents, houses, settings, fonts, paths.photos_dir);
+    EdgePdfGenerator pdf_generator;
+    DocumentExporter exporter(context_builder, renderer, documents, formats, paths.outputs_dir, pdf_generator);
+    register_format_routes(server.raw(), formats);
+    register_document_routes(server.raw(), documents);
+    register_render_routes(server.raw(), context_builder, renderer, formats);
+    register_export_routes(server.raw(), exporter);
+    register_open_path_routes(server.raw(), paths.outputs_dir, open_path_in_shell);
     register_session_routes(server.raw(), lifecycle);
 
     int port = server.start();

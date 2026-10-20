@@ -1,0 +1,38 @@
+<section class="pagina casa" style="width: {{ formato.ancho }}px; height: {{ formato.alto }}px; --lineas: {{ formato.lineas_descripcion }}">
+{% include "_foto.html" %}
+  <div class="contenido">
+    <div class="cabecera">
+{% if casa.operacion_texto or casa.estado_texto %}
+      <div class="etiquetas">
+{% if casa.operacion_texto %}
+        <span class="etiqueta">{{ casa.operacion_texto }}</span>
+{% endif %}
+{% if casa.estado_texto %}
+        <span class="etiqueta estado">{{ casa.estado_texto }}</span>
+{% endif %}
+      </div>
+{% endif %}
+      <h1 class="titulo">{{ casa.titulo }}</h1>
+{% include "_ubicacion.html" %}
+    </div>
+{% include "_precio.html" %}
+{% if documento.es_flyer %}
+{% if casa.descripcion %}
+    <p class="descripcion">{{ casa.descripcion }}</p>
+{% endif %}
+{% else %}
+{% if casa.descripcion_corta %}
+    <p class="descripcion">{{ casa.descripcion_corta }}</p>
+{% endif %}
+{% endif %}
+{% if casa.datos %}
+    <div class="datos">
+{% for d in casa.datos %}
+      <div class="dato"><span class="valor">{{ d.valor }}</span><span class="etiqueta-dato">{{ d.etiqueta }}</span></div>
+{% endfor %}
+    </div>
+{% endif %}
+{% include "_badges.html" %}
+{% include "_contacto.html" %}
+  </div>
+</section>

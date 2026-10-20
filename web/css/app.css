@@ -258,3 +258,56 @@ a.btn { text-decoration: none; display: inline-block; }
 .portada-tag { position: absolute; top: 6px; left: 6px; font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 999px; background: var(--accent); color: #fff; }
 .foto-pie { width: 100%; margin-top: 8px; font: inherit; font-size: 13px; padding: 5px 8px; border: 1px solid var(--line); border-radius: 6px; background: #fff; }
 .foto-actions { display: flex; gap: 8px; margin-top: 6px; font-size: 13px; }
+
+/* ---- Documentos ---- */
+.documentos .card { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); padding: 18px 22px; margin-top: 20px; }
+.documentos h2 { margin: 0 0 12px; font-size: 18px; }
+.documentos h3 { margin: 14px 0 6px; font-size: 14px; color: var(--muted); font-weight: 600; }
+.documentos .field input[type=text], .documentos .field select, .documentos textarea, .documentos .actions select, .doc-preview select {
+  font: inherit; padding: 7px 10px; border: 1px solid var(--line); border-radius: 6px; background: #fff; color: var(--ink);
+}
+.documentos textarea { width: 100%; resize: vertical; }
+.head-actions { display: flex; gap: 10px; }
+.tag.flyer { background: #e8edf3; color: var(--accent); }
+.tag.catalogo { background: #f3e9df; color: #8a4b12; }
+.pick-list { max-height: 220px; overflow: auto; border: 1px solid var(--line); border-radius: 6px; padding: 6px 12px; background: #fff; }
+.visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.confirm-docs { flex-basis: 100%; font-size: 14px; }
+.confirm-docs ul { margin: 4px 0 0; padding-left: 20px; }
+
+.doc-layout { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 0 24px; align-items: start; }
+.doc-preview { position: sticky; top: 16px; }
+.preview-bar { display: flex; align-items: center; gap: 12px; margin-bottom: 8px; }
+.preview-bar h2 { margin: 0; flex: 1; }
+.preview-box { width: 100%; }
+.preview-frame-wrap { overflow: hidden; border: 1px solid var(--line); border-radius: 4px; background: #d9dbe0; margin: 0 auto; }
+.preview-frame-wrap iframe { border: 0; transform-origin: top left; display: block; background: #fff; }
+
+.casas-doc { list-style: none; margin: 0 0 12px; padding: 0; display: flex; flex-direction: column; gap: 10px; }
+.casa-doc { border: 1px solid var(--line); border-radius: 6px; padding: 8px 12px; background: #fafbfc; }
+.casa-doc-head { display: flex; align-items: center; gap: 10px; margin-bottom: 4px; }
+
+.portada-actual { display: flex; align-items: center; gap: 12px; margin: 12px 0; }
+.portada-actual img { width: 140px; height: 94px; object-fit: cover; border-radius: 6px; border: 1px solid var(--line); }
+.portada-fotos { display: flex; flex-wrap: wrap; gap: 8px; }
+.portada-opt { padding: 0; border: 2px solid transparent; border-radius: 6px; background: none; cursor: pointer; }
+.portada-opt img { display: block; width: 92px; height: 68px; object-fit: cover; border-radius: 4px; }
+.portada-opt:hover { border-color: var(--line); }
+.portada-opt.selected { border-color: var(--accent); box-shadow: 0 0 0 2px rgba(31, 58, 95, 0.25); }
+
+.export-formats { display: flex; flex-direction: column; margin: 8px 0; }
+.progress { display: inline-flex; align-items: center; gap: 8px; color: var(--muted); font-size: 14px; }
+.spinner { width: 16px; height: 16px; border: 2px solid var(--line); border-top-color: var(--accent); border-radius: 50%; animation: giro 0.8s linear infinite; }
+@keyframes giro { to { transform: rotate(360deg); } }
+.export-result { margin-top: 16px; padding-top: 12px; border-top: 1px solid var(--line); }
+.result-list { list-style: none; margin: 8px 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
+.result-name { font-weight: 600; }
+.result-line { display: flex; gap: 12px; align-items: center; font-size: 14px; }
+.result-line.fail { color: var(--danger); }
+.ok-mark { color: var(--ok); }
+.ok-mark::before { content: "\2713\00a0"; }
+
+@media (max-width: 1100px) {
+  .doc-layout { grid-template-columns: minmax(0, 1fr); }
+  .doc-preview { position: static; order: -1; }
+}

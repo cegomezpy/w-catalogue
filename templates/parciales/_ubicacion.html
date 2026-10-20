@@ -1,0 +1,11 @@
+{% if casa.ubicacion.texto or casa.ubicacion.mapa_url %}
+<div class="ubicacion">
+{% if casa.ubicacion.texto %}
+  <span class="texto">{{ casa.ubicacion.texto }}</span>
+{% endif %}
+{% if casa.ubicacion.mapa_url %}
+  <span class="coordenadas">{{ casa.ubicacion.coordenadas_texto }}</span>
+  <a href="{{ casa.ubicacion.mapa_url }}">Ver en el mapa</a>
+{% endif %}
+</div>
+{% endif %}

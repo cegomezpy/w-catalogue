@@ -25,6 +25,7 @@ target_include_directories(catalog_core PUBLIC
     ${CMAKE_BINARY_DIR}/generated
     third_party/httplib
     third_party/json
+    third_party/inja
     third_party/stb)
 target_compile_definitions(catalog_core PUBLIC _WIN32_WINNT=0x0A00 WINVER=0x0A00 UNICODE _UNICODE WIN32_LEAN_AND_MEAN NOMINMAX)
 target_compile_options(catalog_core PRIVATE -Wall -Wextra)
@@ -48,6 +49,7 @@ target_link_options(catalog_tests PRIVATE -static -static-libgcc -static-libstdc
 install(TARGETS WCatalog RUNTIME DESTINATION .)
 install(DIRECTORY web/ DESTINATION web)
 install(DIRECTORY fonts/ DESTINATION fonts)
+install(DIRECTORY templates/ DESTINATION templates)
 
 # Pruebas de la interfaz que no necesitan navegador (solo si hay Node.js)
 find_program(NODE_EXE node)

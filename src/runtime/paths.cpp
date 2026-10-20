@@ -33,6 +33,8 @@ AppPaths make_paths(const fs::path& exe_dir) {
     p.fonts_dir = p.data_dir / "fuentes";
     p.photos_dir = p.data_dir / "fotos";
     p.tmp_dir = p.data_dir / "tmp";
+    p.documents_dir = p.data_dir / "documentos";
+    p.outputs_dir = p.data_dir / "salidas";
     return p;
 }
 
@@ -50,6 +52,15 @@ fs::path resolve_included_fonts_dir(const fs::path& exe_dir) {
     fs::path beside = exe_dir / "fonts";
     if (fs::is_directory(beside, ec)) return beside;
     fs::path dev = exe_dir.parent_path() / "fonts";
+    if (fs::is_directory(dev, ec)) return dev;
+    return beside;
+}
+
+fs::path resolve_templates_dir(const fs::path& exe_dir) {
+    std::error_code ec;
+    fs::path beside = exe_dir / "templates";
+    if (fs::is_directory(beside, ec)) return beside;
+    fs::path dev = exe_dir.parent_path() / "templates";
     if (fs::is_directory(dev, ec)) return dev;
     return beside;
 }
@@ -77,6 +88,8 @@ void ensure_data_dirs(const AppPaths& paths) {
     ensure_dir(paths.fonts_dir);
     ensure_dir(paths.photos_dir);
     ensure_dir(paths.tmp_dir);
+    ensure_dir(paths.documents_dir);
+    ensure_dir(paths.outputs_dir);
 
     // Los permisos de carpeta no bastan para saber si se puede escribir: se prueba.
     const fs::path probe = paths.data_dir / ".write-test";

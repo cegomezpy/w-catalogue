@@ -1,0 +1,7 @@
+<div class="fotos">
+{% if casa.foto_principal %}
+  <div class="foto-principal"><img src="{{ casa.foto_principal.src }}" alt=""></div>
+{% else %}
+  <div class="foto-principal"><div class="foto-neutra"></div></div>
+{% endif %}
+</div>

@@ -1,0 +1,25 @@
+{% if contacto %}
+<div class="contacto">
+{% if contacto.nombre %}
+  <span class="nombre">{{ contacto.nombre }}</span>
+{% endif %}
+{% if contacto.telefono %}
+  <span>Tel. {{ contacto.telefono }}</span>
+{% endif %}
+{% if contacto.whatsapp %}
+  <span>WhatsApp {{ contacto.whatsapp }}</span>
+{% endif %}
+{% if contacto.email %}
+  <span>{{ contacto.email }}</span>
+{% endif %}
+{% if contacto.web %}
+  <span>{{ contacto.web }}</span>
+{% endif %}
+{% if contacto.instagram %}
+  <span>Instagram {{ contacto.instagram }}</span>
+{% endif %}
+{% if contacto.facebook %}
+  <span>Facebook {{ contacto.facebook }}</span>
+{% endif %}
+</div>
+{% endif %}

@@ -1,0 +1,5 @@
+[
+  {"id": "instagram-4x5", "nombre": "Instagram 4:5", "ancho": 1080, "alto": 1350, "max_badges": 8, "lineas_descripcion": 6},
+  {"id": "landscape-16x9", "nombre": "Landscape 16:9", "ancho": 1920, "alto": 1080, "max_badges": 10, "lineas_descripcion": 5},
+  {"id": "movil-9x16", "nombre": "Móvil 9:16", "ancho": 1080, "alto": 1920, "max_badges": 10, "lineas_descripcion": 10}
+]

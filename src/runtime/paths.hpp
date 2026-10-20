@@ -13,6 +13,8 @@ struct AppPaths {
     std::filesystem::path fonts_dir;  // data/fuentes: fuentes importadas
     std::filesystem::path photos_dir; // data/fotos/<casa_id>: fotos de las casas
     std::filesystem::path tmp_dir;    // data/tmp: temporales (importaciones a medias)
+    std::filesystem::path documents_dir;  // data/documentos/<id>: portadas subidas
+    std::filesystem::path outputs_dir;    // data/salidas: carpetas de exportación
 };
 
 // Carpeta que contiene el ejecutable en ejecución.
@@ -31,6 +33,9 @@ std::filesystem::path resolve_web_dir(const std::filesystem::path& exe_dir);
 
 // Carpeta de las fuentes incluidas: fonts/ junto al exe o en el nivel superior (build/).
 std::filesystem::path resolve_included_fonts_dir(const std::filesystem::path& exe_dir);
+
+// Carpeta de plantillas: templates/ junto al exe o en el nivel superior (build/).
+std::filesystem::path resolve_templates_dir(const std::filesystem::path& exe_dir);
 
 // Ruta en UTF-8, para JSON, logs y mensajes.
 std::string to_utf8(const std::filesystem::path& p);

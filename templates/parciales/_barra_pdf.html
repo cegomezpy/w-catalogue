@@ -1,0 +1,14 @@
+<div class="barra-pdf no-print">
+  <button type="button" onclick="window.print()">Guardar como PDF</button>
+  <span class="ayuda">En el diálogo de impresión, elige <strong>Guardar como PDF</strong> como impresora.</span>
+</div>
+<script>
+  (function () {
+    var fit = function () {
+      var s = Math.min(1, (window.innerWidth - 32) / {{ formato.ancho }});
+      document.body.style.setProperty('--escala', s > 0 ? s : 1);
+    };
+    window.addEventListener('resize', fit);
+    fit();
+  })();
+</script>

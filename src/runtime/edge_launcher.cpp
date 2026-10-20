@@ -86,6 +86,12 @@ fs::path edge_profile_dir() {
     return fs::path(local) / L"WCatalog" / L"edge-profile";
 }
 
+fs::path edge_headless_profile_dir() {
+    std::wstring local = env_wide(L"LOCALAPPDATA");
+    if (local.empty()) local = (fs::temp_directory_path()).wstring();
+    return fs::path(local) / L"WCatalog" / L"edge-headless";
+}
+
 std::wstring edge_command_line(const fs::path& edge, const std::string& url, const fs::path& profile_dir) {
     std::wstring cmd = L"\"" + edge.wstring() + L"\"";
     cmd += L" --app=" + widen(url);

@@ -366,10 +366,23 @@ Json HouseService::update(std::int64_t id, const Json& payload) {
 }
 
 void HouseService::remove(std::int64_t id) {
-    Statement st = db_.prepare("DELETE FROM casa WHERE id = ?");
-    st.bind(1, id);
-    st.step();
-    if (db_.changes() == 0) throw NotFoundError("La casa no existe");
+    {
+        Transaction tx(db_);
+        // los flyers de esta casa se quedarían sin casa: se eliminan antes de que la cascada
+        // quite la fila de documento_casa; los catálogos solo pierden esa fila
+        {
+            Statement flyers = db_.prepare(
+                "DELETE FROM documento WHERE tipo = 'flyer' AND id IN "
+                "(SELECT documento_id FROM documento_casa WHERE casa_id = ?)");
+            flyers.bind(1, id);
+            flyers.step();
+        }
+        Statement st = db_.prepare("DELETE FROM casa WHERE id = ?");
+        st.bind(1, id);
+        st.step();
+        if (db_.changes() == 0) throw NotFoundError("La casa no existe");
+        tx.commit();
+    }
     if (photos_) photos_->remove_house_folder(id);
 }
 

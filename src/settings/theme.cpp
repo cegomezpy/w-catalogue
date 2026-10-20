@@ -31,6 +31,18 @@ std::string generic_for(const FontLibrary& fonts, const std::string& family) {
 
 }  // namespace
 
+std::vector<FontVariant> theme_font_variants(const SettingsService& settings, const FontLibrary& fonts) {
+    const std::string titles = resolve_family(settings, fonts, SettingsService::kFuenteTitulos);
+    const std::string text = resolve_family(settings, fonts, SettingsService::kFuenteTexto);
+    std::vector<FontVariant> out;
+    std::set<std::string> done;
+    for (const std::string& family : {titles, text}) {
+        if (!done.insert(family).second) continue;
+        for (const FontVariant& v : fonts.family_variants(family)) out.push_back(v);
+    }
+    return out;
+}
+
 std::string build_theme_css(const SettingsService& settings, const FontLibrary& fonts,
                             const std::string& font_base_url, bool origin_subdirs) {
     const std::string titles = resolve_family(settings, fonts, SettingsService::kFuenteTitulos);

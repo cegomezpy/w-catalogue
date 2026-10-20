@@ -53,6 +53,7 @@
       errors: {},
       saving: false,
       confirmingDelete: false,
+      docsAffected: [], // documentos que usan la casa: [{id, tipo, titulo, efecto}]
       defaultCurrency: 'USD',
       badgeTimer: null,
 
@@ -246,6 +247,23 @@
         } finally {
           this.saving = false;
         }
+      },
+
+      // Antes de confirmar, se avisa qué documentos usan la casa (los flyers se eliminan; de los catálogos se quita)
+      async askDelete() {
+        this.docsAffected = [];
+        try {
+          this.docsAffected = await window.api.get('/casas/' + this.id + '/documentos', { silent: true });
+        } catch (e) { /* sin aviso: la eliminación sigue siendo posible */ }
+        this.confirmingDelete = true;
+      },
+
+      async createFlyer() {
+        try {
+          const doc = await window.api.post('/documentos', { tipo: 'flyer', casa_id: this.id });
+          window.notify('Flyer creado', 'ok');
+          window.location.hash = '#/documentos/' + doc.id;
+        } catch (e) { /* notificado */ }
       },
 
       async remove() {

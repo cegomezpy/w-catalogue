@@ -18,6 +18,10 @@ std::optional<std::filesystem::path> find_edge();
 // Carpeta del perfil propio de la ventana: %LOCALAPPDATA%\WCatalog\edge-profile
 std::filesystem::path edge_profile_dir();
 
+// Carpeta del perfil de Edge para generar PDF: %LOCALAPPDATA%\WCatalog\edge-headless. Es distinto del
+// de la ventana de la app: con un perfil compartido Edge podría delegar el comando en la instancia ya abierta.
+std::filesystem::path edge_headless_profile_dir();
+
 // Línea de comandos con la que se lanza Edge en modo aplicación.
 std::wstring edge_command_line(const std::filesystem::path& edge, const std::string& url,
                                const std::filesystem::path& profile_dir);
